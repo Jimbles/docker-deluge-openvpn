@@ -1,5 +1,5 @@
 FROM linuxserver/deluge:latest
-LABEL maintainer="Matthew Crenshaw"
+LABEL maintainer="James Avery"
 
 VOLUME /config
 VOLUME /downloads
@@ -7,11 +7,28 @@ VOLUME /downloads
 # Install openvpn and utilities
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
-    && apt-get install -y wget git curl jq sudo ufw iputils-ping openvpn bc \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && apt-get install -y \
+    bc \
+    curl \
+    git \
+    iputils-ping \
+    jq \
+    openvpn \
+    sudo \
+    ufw \
+    wget 
 
+# Copy from github rep
 COPY root/ /
+
+#get latest nordvpn and update
+RUN  wget -q -P tmp/ https://downloads.nordcdn.com/configs/archives/servers/ovpn.zip
+RUN  unzip -q -o -j tmp/ovpn.zip -d /etc/openvpn/nordvpn/
+RUN find /etc/openvpn/nordvpn/ -name '*.ovpn' -print0 | xargs -0 sed -i -e 's#auth-user-pass.*#auth-user-pass /config/openvpn-credentials.txt#'
+
+#cleanup
+RUN apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV OPENVPN_USERNAME=**None** \
     OPENVPN_PASSWORD=**None** \
